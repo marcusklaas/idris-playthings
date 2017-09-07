@@ -15,17 +15,14 @@ reverseIt Nil = []
 reverseIt (x :: xs) = (reverseIt xs) ++ [x]
 
 innerProduct : Num a => Vect n a -> Vect n a -> a
-innerProduct Nil Nil = 0
-innerProduct (x :: xs) (y :: ys) = x * y + innerProduct xs ys
+innerProduct = ((.) (sum . (map (uncurry (*))))) . zip
 
 transposeHelper : Vect m a -> Vect m (Vect p a) -> Vect m (Vect (S p) a)
-transposeHelper Nil Nil = Nil
-transposeHelper (x :: xs) (y :: ys) = (x :: y) :: (transposeHelper xs ys)
+transposeHelper = ((.) (map (uncurry (::)))) . zip
 
 transposeIt : Vect n (Vect m a) -> Vect m (Vect n a)
 transposeIt Nil = replicate _ []
 transposeIt (x :: xs) = transposeHelper x (transpose xs)
 
 matMult : Num a => Vect n (Vect m a) -> Vect m (Vect p a) -> Vect n (Vect p a)
-matMult Nil rhs = Nil
-matMult (x :: xs) rhs = (map (innerProduct x) (transpose rhs)) :: (matMult xs rhs)
+matMult xs rhs = map (\x => map (innerProduct x) $ transposeIt rhs) xs
