@@ -1,30 +1,30 @@
 data Format =
-    StringLiteral String Format |
-    Integery Format |
-    Stringy Format |
+    Literal String Format |
+    IntegerArgument Format |
+    StringArgument Format |
     End
 
 toFormat : String -> Format
 toFormat template = inspect (unpack template) where
       inspect : List Char -> Format
-      inspect ('%' :: 's' :: xs) = Stringy $ inspect xs
-      inspect ('%' :: 'd' :: xs) = Integery $ inspect xs
+      inspect ('%' :: 's' :: xs) = StringArgument $ inspect xs
+      inspect ('%' :: 'd' :: xs) = IntegerArgument $ inspect xs
       inspect (x :: xs) = case inspect xs of
-                            StringLiteral lit fmtCont => StringLiteral (pack . (x ::) . unpack $ lit) fmtCont
-                            fmt => StringLiteral (pack (x :: Nil)) fmt
+                            Literal lit fmtCont => Literal (pack . (x ::) . unpack $ lit) fmtCont
+                            fmt => Literal (pack (x :: Nil)) fmt
       inspect Nil = End
 
 PrintType : Format -> Type
-PrintType (StringLiteral str fmt) = PrintType fmt
-PrintType (Integery fmt) = Int -> (PrintType fmt)
-PrintType (Stringy fmt) = String -> (PrintType fmt)
+PrintType (Literal str fmt) = PrintType fmt
+PrintType (IntegerArgument fmt) = Int -> (PrintType fmt)
+PrintType (StringArgument fmt) = String -> (PrintType fmt)
 PrintType End = String
 
-printFormat : (template: Format) -> String -> PrintType template
-printFormat (StringLiteral lit fmt) buf = printFormat fmt (buf ++ lit)
-printFormat (Integery fmt) buf = \i => printFormat fmt (buf ++ show i)
-printFormat (Stringy fmt) buf = \s => printFormat fmt (buf ++ s)
-printFormat End buf = buf
+printWithBuffer : (template: Format) -> String -> PrintType template
+printWithBuffer (Literal lit fmt) buf = printWithBuffer fmt (buf ++ lit)
+printWithBuffer (IntegerArgument fmt) buf = \i => printWithBuffer fmt (buf ++ show i)
+printWithBuffer (StringArgument fmt) buf = \s => printWithBuffer fmt (buf ++ s)
+printWithBuffer End buf = buf
 
 printf : (template : String) -> PrintType (toFormat template)
-printf template = printFormat (toFormat template) ""
+printf template = printWithBuffer (toFormat template) ""
