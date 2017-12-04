@@ -40,8 +40,24 @@ processGuess : (letter : Char) ->
                Either (WordState guesses (S letters))
                       (WordState (S guesses) letters)
 processGuess l (MkWordState word missing) = case isElem l missing of
-                                                 Yes prf => Right $ MkWordState word (chapther91.removeElem_auto l missing)
+                                                 Yes prf => Right $ MkWordState word (chapter91.removeElem_auto l missing)
                                                  No contra => Left $ MkWordState word missing
 
 game : WordState (S guesses) (S letters) -> IO Finished
-game st = ?game_rhs
+game {guesses} {letters} st = do ([guess] ** _) <- readGuess
+                                 case processGuess guess st of
+                                      Right goodGame => do putStrLn "Right!"
+                                                           case letters of
+                                                                Z => pure (Won goodGame)
+                                                                S _ => game goodGame
+                                      Left badGame => do putStrLn "Wrong!"
+                                                         case guesses of
+                                                              Z => pure (Lost badGame)
+                                                              S _ => game badGame
+
+main : IO ()
+main = do result <- game {guesses = 3} (MkWordState "Turbot" ['T', 'U', 'R', 'B', 'O'])
+          case result of
+               Lost (MkWordState word missing) =>
+                    putStrLn ("You lose! The word was " ++ word ++ ".")
+               Won _ => putStrLn "You win!"
