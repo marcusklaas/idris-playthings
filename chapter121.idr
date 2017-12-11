@@ -43,8 +43,7 @@ statefulTreeLabel : Tree a -> Tree (Integer, a)
 statefulTreeLabel tr = evalState (statefulTreeLabelWith tr) [1..]
 
 update : (stateType -> stateType) -> State stateType ()
-update f = do st <- get
-              put $ f st
+update f = map f get >>= put
 
 newIncrease : Nat -> State Nat ()
 newIncrease = update . (+)
