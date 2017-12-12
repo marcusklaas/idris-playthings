@@ -7,14 +7,21 @@ data State : (stateType : Type) -> Type -> Type where
   Pure : ty -> State stateType ty
   Bind : State stateType a -> (a -> State stateType b) -> State stateType b
 
+Functor (State stateType) where
+  map func x = Bind x (Pure . func)
+
+Applicative (State stateType) where
+  pure = Pure
+  f <*> fa = Bind f (\innerFunc => Bind fa (\innerVal => (Pure (innerFunc innerVal))))
+
+Monad (State stateType) where
+  fa >>= f = Bind fa f
+
 get : State stateType stateType
 get = Get
 
 put : stateType -> State stateType ()
 put = Put
-
-pure : ty -> State stateType ty
-pure = Pure
 
 (>>=) : State stateType a -> (a -> State stateType b) -> State stateType b
 (>>=) = Bind
