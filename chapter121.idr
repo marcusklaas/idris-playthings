@@ -56,10 +56,8 @@ countEmpty (Node leftTree _ rightTree)
 
 total
 countEmptyNode : Tree a -> State (Nat, Nat) ()
-countEmptyNode Empty = do (empties, nodes) <- get
-                          put $ (S empties, nodes)
+countEmptyNode Empty = update $ \(empties, nodes) => (S empties, nodes)
 countEmptyNode (Node leftTree val rightTree)
   = do countEmptyNode leftTree
        countEmptyNode rightTree
-       (empties, nodes) <- get
-       put $ (empties, S nodes)
+       update $ \(empties, nodes) => (empties, S nodes)
