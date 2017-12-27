@@ -19,6 +19,8 @@ data Process : Type -> Type where
 
 data Fuel = Dry | More (Lazy Fuel)
 
+-- is this a bug in Idris 1.0? this should be considered total!
+partial
 run : Fuel -> Process t -> IO (Maybe t)
 run Dry _ = pure Nothing
 run fuel (Action act) = act >>= pure . Just
@@ -57,3 +59,32 @@ procMain = do Just adderId <- Spawn procAdder
               Just res <- Request adderId (Msg 10 500)
                   | Nothing => Action (putStrLn "Failed receiving msg")
               Action (putStrLn . show $ res)
+
+partial
+forever : Fuel
+forever = More forever
+
+-- should be total!
+partial
+runProc : Process () -> IO ()
+runProc proc = do run forever proc
+                  pure ()
+
+data ProcState = NoRequest | Sent | Complete
+
+data NewProcess : Type ->
+                  (inState : ProcState) ->
+                  (outState : ProcState) ->
+                  Type where
+     Request : MessagePID -> Message -> NewProcess Nat st st
+     Respond : ((msg : Message) -> NewProcess Nat NoRequest NoRequest) ->
+               NewProcess (Maybe Message) st Sent
+     Spawn : NewProcess () NoRequest Complete ->
+             NewProcess (Maybe MessagePID) st st
+     Loop : Inf (NewProcess a NoRequest Complete) ->
+            NewProcess a Sent Complete
+     Action : IO a -> NewProcess a st st
+     Pure : a -> NewProcess a st st
+     (>>=) : NewProcess a stateOne stateTwo ->
+             (a -> NewProcess stateTwo stateThree) ->
+             NewProcess b stateOne stateThree
